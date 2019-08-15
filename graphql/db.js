@@ -1,34 +1,37 @@
-export const people = [
+export let movies = [
     {
+        id: 0,
+        name: "Star Wars",
+        score: 26
+    },{
         id: 1,
-        name: "Ami",
-        age: 26,
-        gender: "female"
+        name: "Avengers",
+        score: 99
     },{
         id: 2,
-        name: "AAA",
-        age: 20,
-        gender: "female"
+        name: "The Godfater I",
+        score: 47
     },{
         id: 3,
-        name: "BBB",
-        age: 30,
-        gender: "male"
-    },{
-        id: 4,
-        name: "CCC",
-        age: 40,
-        gender: "female"
-    },{
-        id: 5,
-        name: "DDD",
-        age: 50,
-        gender: "male"
+        name: "Logan",
+        score: 5
+    
     }
 ];
 
 export const getById = id => {
-    const filteredPeople = people.filter(person => person.id === id);
-    return filteredPeople[0];
+    const filteredMovie = movies.filter(movie => movie.id === id);
+    return filteredMovie[0];
 }
         
+export const deleteMovie = id => {
+    const CleanedMovies = movies.filter(movie => movie.id !== id);
+    
+    //같은 id를 가지지 않은 movie의 배열을 만들기
+    if(movies.length > CleanedMovies.length){
+      movies = CleanedMovies;
+      return true;
+    } else {
+      return false;
+    }
+}

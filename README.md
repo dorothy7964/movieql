@@ -308,7 +308,7 @@ type Query {
 }
 ```
 
-위에서 people이 보내는것은 [Person] 이다. 
+위에서 people이 보내는것은 [Person] 이다.   
 여기서 people은 오직 하나의 Person만 보내지 않고 다수의 Person을 보낸다. 
 
 다시말해 Person이 array라는 것이다.   
@@ -389,6 +389,8 @@ query{
 ```
 
 위처럼 필요한 부분만 GraphQL을 통해서 받게 되는것이다.
+
+<br/>
 
 ## DB 분리
 
@@ -495,3 +497,111 @@ Operation(schema.graphql)에서 우리가 우리의 data가 어떻게 보일지 
 그 Operation(질문)을 resolve(해결)하는 함수를 만드는것이다
 
 (resolver.js). 우리가 원하거나 좋아하는 어떤종류의 Backend든 다 가질수 있다.
+
+<br/>
+
+# Movie Schema 
+
+**graphql/db.js**
+
+※ 이전 데이터 수정
+
+```javascript
+// const 로 하면 읽기전용이 된다
+export let movies = [
+  {
+    id: 0,
+    name: "Star Wars - The new one",
+    score: 10
+  },{
+    id: 1,
+    name: "Avengers - The new one",
+    score: 90
+  },{
+    id: 2,
+    name: "The Godfater I",
+    score: 7
+  },{
+    id: 3,
+    name: "Logan",
+    score: 2
+  }
+];
+
+export const getById = id => {
+  const filteredMovies = movies.filter(movie => movie.id === id);
+  return filteredMovies[0];
+}
+
+export const deleteMovie = (id) => {
+  const CleanedMovies = movies.filter(movie => movie.id !== id);
+  
+  //같은 id를 가지지 않은 movie의 배열을 만들기
+  if(movies.length > CleanedMovies.length){
+    movies = CleanedMovies;
+    return true;
+  } else {
+    return false;
+  }
+}
+```
+
+**graphql/schema.graphql**
+
+※ 이전 데이터 수정
+
+```javascript
+type Movie {
+  id: Int!
+  name: String!
+  score: Int!
+}
+
+type Query {
+  movies: [Movie]!
+  movie(id: Int!): Movie
+}
+```
+
+**graphql/resolver.js**
+
+※ 이전 데이터 수정
+
+```javascript
+import { movies, getById } from "./db";
+
+const resolvers = {
+  Query: {
+    movies:() => movies,
+    movie: (_, { id }) => getById(id)
+  }
+};
+
+export default resolvers;
+```
+
+서버를 재시작하고 우리의 Playground를 새로고침하자.   
+http://localhost:4000/ 로 이동 후 확인해보기    
+
+**PlayGround ( Ctrl+Enter = 실행 )**
+
+```javascript
+{
+  movies {
+    name  
+  }
+}
+```
+
+```javascript
+{
+  movie(id:1){
+    name
+  }
+}
+```
+
+<br/>
+
+
+
