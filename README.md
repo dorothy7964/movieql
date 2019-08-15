@@ -200,6 +200,7 @@ server.start(() => console.log("Graphql Server Running"))
 이제 이 PlayGround에서 왼쪽 에디터에 우리가 만들었던 query를 입력해보자.
 
 **PlayGround ( Ctrl+Enter = 실행 )**
+
 ```javascript
 query {
     name
@@ -271,6 +272,7 @@ http://localhost:4000/ 로 이동 후 확인해보기
 
 
 **PlayGround ( Ctrl+Enter = 실행 )**
+
 ```javascript
 query{
   person{
@@ -380,6 +382,7 @@ Query에 의해 설명된것을 보면 people은 people을 반환하는데 이�
 http://localhost:4000/ 로 이동 후 확인해보기    
 
 **PlayGround ( Ctrl+Enter = 실행 )**
+
 ```javascript
 query{
   people {
@@ -483,7 +486,7 @@ http://localhost:4000/ 로 이동 후 확인해보기
 **PlayGround ( Ctrl+Enter = 실행 )**
 
 ```javascript
-{
+query {
   person(id: 1) {
     name
     age
@@ -586,7 +589,7 @@ http://localhost:4000/ 로 이동 후 확인해보기
 **PlayGround ( Ctrl+Enter = 실행 )**
 
 ```javascript
-{
+query {
   movies {
     name  
   }
@@ -594,7 +597,7 @@ http://localhost:4000/ 로 이동 후 확인해보기
 ```
 
 ```javascript
-{
+query {
   movie(id:1){
     name
   }
@@ -603,5 +606,86 @@ http://localhost:4000/ 로 이동 후 확인해보기
 
 <br/>
 
+## Defining Mutations
 
+(change of state)Mutation은 Database 상태가 변할 때 사용되는 것이다.  
 
+**graphql/schema.graphql**
+
+```javascript
+(...)
+type Mutation {
+  addMovie(name: String!, score: Int!): Movie!
+}
+```
+
+Mutation 를 추가해준다.
+
+GraphQL이 내 Mutation 이나 Query를 요청하길 원한다면  
+type Query와 Mutation에 넣야야 한다.
+
+<br/>
+
+**graphql/db.js**
+
+```javascript
+(...)
+
+export const addMovie = (name, score) => {
+  const newMovie = {
+    id: `${movies.length + 1}`,
+    name,
+    score
+  };
+  movies.push(newMovie);
+  return newMovie;
+}
+```
+
+<br/>
+
+**graphql/resolver.js**
+
+```javascript
+import { movies, getById, addMovie } from "./db";
+
+const resolvers = {
+    Query: {
+        movies:() => movies,
+        movie: (_, { id }) => getById(id)
+    },
+    Mutation: {
+        addMovie: (_, {name, score}) => addMovie(name,score)
+    }
+};
+
+export default resolvers;
+```
+
+addMovie 를 import 해준다.
+
+<br/>
+
+서버를 재시작하고 우리의 Playground를 새로고침하자.   
+http://localhost:4000/ 로 이동 후   
+addMovie함수를 사용해 영화 추가해보기
+
+**PlayGround ( Ctrl+Enter = 실행 )**
+
+```javascript
+mutation {
+ addMovie(name: "Batman: Hush", score: 36){
+    name
+  }
+}
+```
+영화를 추가해보고 잘 들어갔는지 확인하기
+
+```javascript
+query {
+  movies {
+    id
+    name
+  }
+}
+```
