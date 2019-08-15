@@ -536,17 +536,6 @@ export const getById = id => {
   return filteredMovies[0];
 }
 
-export const deleteMovie = (id) => {
-  const CleanedMovies = movies.filter(movie => movie.id !== id);
-  
-  //같은 id를 가지지 않은 movie의 배열을 만들기
-  if(movies.length > CleanedMovies.length){
-    movies = CleanedMovies;
-    return true;
-  } else {
-    return false;
-  }
-}
 ```
 
 **graphql/schema.graphql**
@@ -668,18 +657,20 @@ addMovie 를 import 해준다.
 
 서버를 재시작하고 우리의 Playground를 새로고침하자.   
 http://localhost:4000/ 로 이동 후   
-addMovie함수를 사용해 영화 추가해보기
+addMovie함수를 사용해 영화 추가 해보기
 
 **PlayGround ( Ctrl+Enter = 실행 )**
 
 ```javascript
 mutation {
  addMovie(name: "Batman: Hush", score: 36){
-    name
+    name  //하위영역
   }
 }
 ```
-영화를 추가해보고 잘 들어갔는지 확인하기
+
+schema.graphql 에서 Movie! 를 필수사항으로 설정해 놨기 때문에  
+하위영역 중 어떤 것을 선택할지 묻는다.
 
 ```javascript
 query {
@@ -689,3 +680,104 @@ query {
   }
 }
 ```
+영화를 추가해보고 잘 들어갔는지 확인하기
+
+<br/>
+
+# Delete Mutation
+
+**graphql/db.js**
+
+```javascript
+(...)
+
+export const deleteMovie = id => {
+    const CleanedMovies = movies.filter(movie => movie.id !== id);
+    
+    //같은 id를 가지지 않은 movie의 배열을 만들기
+    if(movies.length > CleanedMovies.length){
+        movies = CleanedMovies;
+      return true;
+    } else {
+      return false;
+    }
+}
+```
+
+`deleteMovie` 함수는 `true` or `false` 만 `return` 한다.
+
+<br/>
+
+**graphql/schema.graphql**
+
+```javascript
+(...)
+
+type Mutation {
+  addMovie(name: String!, score: Int!): Movie!
+  deleteMovie(id: Int!): Boolean!
+}
+```
+
+**graphql/db.js**에 `deleteMovie` 함수는 `true` or `false` 만 `return` 한다.
+
+해당하는 movie가 삭제되었는지 여부를 의미하기 때문에
+`Boolean형`이어야 한다.
+
+<br/>
+
+**graphql/resolver.js**
+
+
+```javascript
+import { movies, getById, addMovie, deleteMovie } from "./db";
+
+const resolvers = {
+    Query: {
+        movies:() => movies,
+        movie: (_, { id }) => getById(id)
+    },
+    Mutation: {
+        addMovie: (_, {name, score}) => addMovie(name,score),
+        deleteMovie: (_, {id}) => deleteMovie(id)
+    }
+};
+
+export default resolvers;
+```
+
+deleteMovie를 import 하기
+
+<br/>
+
+서버를 재시작하고 우리의 Playground를 새로고침하자.   
+http://localhost:4000/ 로 이동 후   
+deleteMovie함수를 사용해 영화 삭제 해보기
+
+**PlayGround ( Ctrl+Enter = 실행 )**
+
+```javascript
+query {
+  movies {
+    id
+    name
+  }
+}
+```
+
+영화를 조회 해보기
+
+```javascript
+mutation {
+ deleteMovie(id: 1)
+}
+```
+
+deleteMovie 사용해 삭제하기
+
+하위영역으 Boolean 이라는 걸 알고 있기 때문에   
+addMovie 함수처럼 물어보지 않는다.
+
+
+`영화 정보를 받을 때 Query를 했고`  
+`Database의 상태를 바꾸기 위해서 Mutation을 한다.`
