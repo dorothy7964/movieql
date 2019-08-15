@@ -23,21 +23,23 @@ description:Movie API with Graphql
 
 ### graphql-yoga 설치
 
-[graphql-yoga](https://github.com/prisma/graphql-yoga)는 create-react-app 명령어랑 비슷한데 GraphQL 프로젝트를 빠르게 시작할 수 있다.
-
 ```javascript
 yarn add graphql-yoga
 ```
+
+[graphql-yoga](https://github.com/prisma/graphql-yoga)는 create-react-app 명령어랑 비슷한데 GraphQL 프로젝트를 빠르게 시작할 수 있다.
 
 <br/>
 
 ### nodemo 설치
 
-nodemon은 파일을 수정할 때마다 서버를 재시작 해준다.
-
 ```javascript
 yarn global add nodemon
 ```
+
+nodemon은 파일을 수정할 때마다 서버를 재시작 해준다.
+
+<br/>
 
 **package.json**
 
@@ -779,5 +781,125 @@ deleteMovie 사용해 삭제하기
 addMovie 함수처럼 물어보지 않는다.
 
 
-`영화 정보를 받을 때 Query를 했고`  
-`Database의 상태를 바꾸기 위해서 Mutation을 한다.`
+**`영화 정보를 받을 때 Query를 했고`**  
+**`Database의 상태를 바꾸기 위해서 Mutation을 한다.`**
+
+<br/>
+
+# Wrapping a REST API with GraphQL Part One
+
+[JSONView 구글 확장 프로그램](https://chrome.google.com/webstore/detail/jsonview/chklaanhfefbnpoihckbnefhakgolnmc?hl=ko) 을 설치하면 JSON을 깔끔하게 보여준다.
+
+
+먼저 우리의 db에 사용하려는 API를 불러올것이다.   
+이번에 사용할 영화 API는 [YTS API](https://yts.lt/api)  에서 제공하는 API를 사용할 것 이다.  
+API key도 따로 필요 없으면서 많은 영화의 db를 자주 업데이트되는 API를 제공한다. 
+
+[list-movie](https://yts.lt/api#list_movies)
+API의 양을 결정하는 필터가 있다.  
+양을 제한 할 수 있고, 분류도 할 수 있다.
+
+[전체 list_movies.json](https://yts.lt/api/v2/list_movies.json)
+
+[list_movies.json?limit=50](https://yts.lt/api/v2/list_movies.json?limit=50)
+주소 옆에 ?limit=50 을 추가하면 숫자만큼 양을 제한할 수 있다.
+
+[list_movies.json?limit=50&minimum_rating=9](https://yts.lt/api/v2/list_movies.json?limit=50&minimum_rating=9) &minimum_rating=9 추가적으로 적어주면 최소평점을 사용해서 9점 이상만 받을 수 있다.
+
+<br/>
+
+
+
+## yarn Install
+
+### node-fetch 설치
+
+이제 Graph QL로 REST API를 감싸볼 것이다. 코드 작성 전에 설치해야 할 패키지가 있다.
+
+```javascript
+yarn add node-fetch
+```
+
+fetch를 위한 패키지 설치이다. 그리고 코드를 수정하자.
+
+<br/>
+
+## YTS API 데이터로 바꾸기
+
+**graphql/db.js**
+
+※ 이전 데이터는 모두 지우고 시작했다.
+
+```javascript
+import fetch from "node-fetch";
+const API_URL = "https://yts.am/api/v2/list_movies.json"
+
+export const getMovies = (limit, rating) => fetch(`${API_URL}`)
+  .then(res => res.json())
+  .then(json => json.data.movies);
+```
+
+db.js에서는 우리가 가져올 api주소를 fetch하였다. 
+그리고 이어서 json파일로 변환했다.
+
+파라미터로 가져온 limit와 rating은 추후에 사용할 갯수제한과 rating 순서대로 정렬을 위해 미리 적어놓았다. 
+
+이 파라미터들은 위에서 언급한 yts.am에서 제공하는 옵션이다.
+
+<br/>
+
+**graphql/resolver.js**
+
+※ 이전 데이터는 모두 지우고 시작했다.
+
+```javascript
+import { getMovies } from "./db";
+
+const resolvers = {
+  Query: {
+    movies: () => getMovies()
+  }
+}
+
+export default resolvers;
+```
+
+resolvers에서는 당장 우리가 필요한 기능인 영화를 불러오는 기능만 구현
+
+<br/>
+
+**graphql/schema.graphql**
+
+```javascript
+type Movie {
+  id: Int!
+  title: String!
+  rating: Float!
+  summary: String!
+  language: String!
+  medium_cover_image: String!
+}
+
+type Query {
+  movies: [Movie]!
+}
+```
+
+schema에서는 API에서 불러올 영화의 필수정보들을 정의
+
+<br/>
+
+**PlayGround ( Ctrl+Enter = 실행 )**
+
+서버를 재시작하고 우리의 Playground를 새로고침하자.   
+http://localhost:4000/ 로 이동 후 확인해보기    
+
+```javascript
+query {
+  movies {
+    id
+    title
+    rating
+  }
+}
+```
