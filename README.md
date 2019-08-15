@@ -1,4 +1,4 @@
-# movieql
+# movieql Backend
 
 Movie API with GraphQL
 
@@ -474,6 +474,11 @@ const resolvers = {
     Query: {
         people: () => people,
         person: (_, { id }) => getById(id)
+        /*
+          (_) 는 그냥 변수 이름이다.
+          parent도 될 수 있고 root이 될 수도 있지만
+          쓰지않을 것이라서 _ 라 썼다.
+        */
     }
 }
 
@@ -804,7 +809,7 @@ API의 양을 결정하는 필터가 있다.
 [list_movies.json?limit=50](https://yts.lt/api/v2/list_movies.json?limit=50)
 주소 옆에 ?limit=50 을 추가하면 숫자만큼 양을 제한할 수 있다.
 
-[list_movies.json?limit=50&minimum_rating=9](https://yts.lt/api/v2/list_movies.json?limit=50&minimum_rating=9) &minimum_rating=9 추가적으로 적어주면 최소평점을 사용해서 9점 이상만 받을 수 있다.
+[list_movies.json?limit=50&minimum_rating=9](https://yts.lt/api/v2/list_movies.json?limit=50&minimum_rating=9) &minimum_rating=9 추가적으로 적어주면 최소 평점을 사용해서 9점 이상만 받을 수 있다.
 
 <br/>
 
@@ -824,7 +829,7 @@ fetch를 위한 패키지 설치이다. 그리고 코드를 수정하자.
 
 <br/>
 
-## YTS API 데이터로 바꾸기
+## REST API 가져와서 Graph QL로 REST API를 감싸볼 것
 
 **graphql/db.js**
 
@@ -834,9 +839,10 @@ fetch를 위한 패키지 설치이다. 그리고 코드를 수정하자.
 import fetch from "node-fetch";
 const API_URL = "https://yts.am/api/v2/list_movies.json"
 
-export const getMovies = (limit, rating) => fetch(`${API_URL}`)
-  .then(res => res.json())
-  .then(json => json.data.movies);
+export const getMovies = (limit, rating) => 
+  fetch(`${API_URL}`)
+    .then(res => res.json())
+    .then(json => json.data.movies);
 ```
 
 db.js에서는 우리가 가져올 api주소를 fetch하였다. 
@@ -869,6 +875,8 @@ resolvers에서는 당장 우리가 필요한 기능인 영화를 불러오는 �
 <br/>
 
 **graphql/schema.graphql**
+
+※ 이전 데이터는 모두 지우고 시작했다.
 
 ```javascript
 type Movie {
@@ -903,3 +911,117 @@ query {
   }
 }
 ```
+
+<br/>
+
+# Wrapping a REST API with GraphQL Part Two
+
+##  만들어진 API를 다시 응용
+
+※ 이전 데이터 수정
+
+**graphql/db.js**
+
+```javascript
+import fetch from "node-fetch";
+const API_URL = "https://yts.am/api/v2/list_movies.json?"
+
+export const getMovies = (limit, rating) => {
+  let REQUEST_URL = API_URL;
+  
+  if (limit > 0) {
+    REQUEST_URL += `&limit=${limit}`;
+  }
+
+  if (rating > 0) {
+    REQUEST_URL += `&minimum_rating=${rating}`;
+  }
+
+  return fetch(REQUEST_URL)
+    .then(res => res.json())
+    .then(json => json.data.movies);
+}
+```
+
+REQUEST_URL을 만들고 YTS에서 제공하는 옵션인 limit와 rating 파라미터를 이용해 API를 컨트롤 할 수있다. 
+
+limit가 설정됬을 때와 rating이 설정됬을 때 REQUEST_URL이 바뀌면서 가져오는 API의 response가 달라지게 되는것이다.
+
+<br/>
+
+**graphql/schema.graphql**
+
+※ 이전 데이터 수정
+
+```javascript
+type Movie {
+  id: Int!
+  title: String!
+  rating: Float!
+  summary: String!
+  language: String!
+  medium_cover_image: String!
+}
+
+type Query {
+  movies(limit: Int, rating: Float): [Movie]!
+}
+```
+
+limit, rating은 필수사항이 아니여서 !를 빼줬다.
+
+<br/>
+
+**graphql/resolver.js**
+
+※ 이전 데이터 수정
+
+```javascript
+import { getMovies } from "./db";
+
+const resolvers = {
+    Query: {
+        movies:(_, {limit, rating}) => getMovies(limit, rating)
+    }
+};
+
+export default resolvers;
+```
+
+
+
+schema와 resovers.js 는 우리가 API를 호출할때 명령어를 `선택사항`으로 불러올 수 있게 만든것이다.
+
+<br/>
+
+
+**PlayGround ( Ctrl+Enter = 실행 )**
+
+서버를 재시작하고 우리의 Playground를 새로고침하자.   
+http://localhost:4000/ 로 이동 후 확인해보기    
+
+```javascript
+query {
+  movies(rating:8.5) {
+    id
+    title
+    rating
+  }
+}
+```
+
+```javascript
+query {
+  movies(limit:40, rating:8.5) {
+    id
+    title
+    rating
+  }
+}
+```
+
+<br/>
+
+
+우리가 만든 GraphQL API와 React, Apollo를 이용해 영화 웹을 만들기
+[Apollo & GraphQL로 영화 웹앱 만들기 - FRONT](https://github.com/dorothy7964/movieql-client)
