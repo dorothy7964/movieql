@@ -1,18 +1,50 @@
-import fetch from "node-fetch";
-const API_URL = "https://yts.am/api/v2/list_movies.json?"
+import axios from "axios";
+const BASE_URL = "https://yts.am/api/v2/";
+const LIST_MOVIES_URL = `${BASE_URL}list_movies.json`;
+const MOVIE_DETAILS_URL = `${BASE_URL}movie_details.json`;
 
-export const getMovies = (limit, rating) => {
-    let REQUEST_URL = API_URL;
-    
-    if (limit > 0) {
-        REQUEST_URL += `&limit=${limit}`;
+export const getMovies = async (limit, rating) => {
+    const {
+        data: {
+            data: { movies }
+        }
+    } = await axios(LIST_MOVIES_URL, {
+        params: {
+            limit,
+            minimum_rating: rating
+        }
+    });
+    return movies;
+};
+  
+export const getById = async id => {
+    const {
+        data: {
+            data: { movie }
+        }
+    } = await axios(MOVIE_DETAILS_URL, {
+        params: {
+            movie_id: id
+        }
+    });
+    return movie;
+};
+  
+export const deleteMovie = (id) => {
+    const cleanedMovies = movies.filter((movie) => (movie.id !== id));
+    if(movies.length > cleanedMovies.length) {
+        movies = [...cleanedMovies];
+        return true;
     }
+    return false;
+}
 
-    if (rating > 0) {
-        REQUEST_URL += `&minimum_rating=${rating}`;
+export const addMovie = (name, score) => {
+    const newMovie = {
+        id: movies.length,
+        name, 
+        score
     }
-
-    return fetch(REQUEST_URL)
-        .then(res => res.json())
-        .then(json => json.data.movies);
+    movies.push(newMovie);
+    return newMovie;
 }
