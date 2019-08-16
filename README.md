@@ -1022,6 +1022,114 @@ query {
 
 <br/>
 
+# axios 변경
+
+**graphql/db.js**
+
+```javascript
+import axios from "axios";
+const BASE_URL = "https://yts.am/api/v2/";
+const LIST_MOVIES_URL = `${BASE_URL}list_movies.json`;
+const MOVIE_DETAILS_URL = `${BASE_URL}movie_details.json`;
+
+export const getMovies = async (limit, rating) => {
+    const {
+        data: {
+            data: { movies }
+        }
+    } = await axios(LIST_MOVIES_URL, {
+        params: {
+            limit,
+            minimum_rating: rating
+        }
+    });
+    return movies;
+};
+  
+export const getById = async id => {
+    const {
+        data: {
+            data: { movie }
+        }
+    } = await axios(MOVIE_DETAILS_URL, {
+        params: {
+            movie_id: id
+        }
+    });
+    return movie;
+};
+  
+export const deleteMovie = (id) => {
+    const cleanedMovies = movies.filter((movie) => (movie.id !== id));
+    if(movies.length > cleanedMovies.length) {
+        movies = [...cleanedMovies];
+        return true;
+    }
+    return false;
+}
+
+export const addMovie = (name, score) => {
+    const newMovie = {
+        id: movies.length,
+        name, 
+        score
+    }
+    movies.push(newMovie);
+    return newMovie;
+}
+```
+
+<br/>
+
+**graphql/resolver.js**
+
+```javascript
+import { getMovies, getById, addMovie, deleteMovie } from './db';
+
+const resolvers = {
+    Query: {
+        movies:(_, {limit, rating}) => getMovies(limit, rating),
+        movie: (_, {id}) => {
+            return getById(id);
+        }
+    },
+    Mutation: {
+        addMovie: (_, {name, score}) => {
+          return addMovie(name, score);
+        },
+        deleteMovie: (_ ,{id}) => deleteMovie(id),
+    }
+};
+
+export default resolvers;
+```
+
+<br/>
+
+**graphql/schema.graphql**
+
+```javascript
+type Movie {
+  id: Int!
+  title: String!
+  rating: Float!
+  summary: String!
+  description_intro: String
+  medium_cover_image: String
+}
+
+type Query {
+  movies(limit: Int, rating: Float): [Movie]!
+  movie(id: Int!): Movie
+}
+
+type Mutation {
+  addMovie(name: String!, score: Int!): Movie
+  deleteMovie(id: Int!): Boolean
+}
+```
+
+<br/>
 
 우리가 만든 GraphQL API와 React, Apollo를 이용해 영화 웹을 만들기
 [Apollo & GraphQL로 영화 웹앱 만들기 - FRONT](https://github.com/dorothy7964/movieql-client)
