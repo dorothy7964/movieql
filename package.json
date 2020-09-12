@@ -13,7 +13,7 @@
     "global": "^4.4.0",
     "graphql": "^14.4.2",
     "graphql-yoga": "^1.18.1",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.1"
   },
   "scripts": {
     "start": "nodemon --exec babel-node index.js"
